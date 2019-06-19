@@ -144,6 +144,20 @@ class LdaSampler(object):
         num = self.nzw + self.beta
         num /= np.sum(num, axis=1)[:, np.newaxis]
         return num
+    
+    def getTopKWords(self, K, vocab):
+        """
+        Returns top K discriminative words for topic t v for which p(v | t) is maximum
+        """
+        pseudocounts = np.copy(self.nzw.T)
+        normalizer = np.sum(pseudocounts, (0))
+        pseudocounts /= normalizer[np.newaxis, :]
+        worddict = {}
+        for t in range(self.n_topics):
+            worddict[t] = {}
+            topWordIndices = pseudocounts[:, t].argsort()[-(K+1):-1]
+            worddict[t] = [vocab[i] for i in topWordIndices]
+        return worddict
 
     def run(self, matrix, edge_dict, maxiter=30):
         """
