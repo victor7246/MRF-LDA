@@ -145,6 +145,12 @@ class LdaSampler(object):
         num /= np.sum(num, axis=1)[:, np.newaxis]
         return num
     
+    def theta(self):
+        V = self.nmz.shape[1]
+        num = self.nmz + self.alpha
+        num /= np.sum(num, axis=1)[:, np.newaxis]
+        return num
+    
     def getTopKWords(self, K, vocab):
         """
         Returns top K discriminative words for topic t v for which p(v | t) is maximum
