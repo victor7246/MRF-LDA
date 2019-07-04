@@ -165,7 +165,7 @@ class LdaSampler(object):
             worddict[t] = [vocab[i] for i in topWordIndices]
         return worddict
 
-    def run(self, matrix, edge_dict, maxiter=30):
+    def run(self, matrix, edge_dict, maxiter=100):
         """
         Run the Gibbs sampler.
         """
