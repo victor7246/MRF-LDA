@@ -81,9 +81,9 @@ class LdaSampler(object):
         left = (self.nzw[:,w] + self.beta) / (self.nz + self.beta * vocab_size)
         right = (self.nmz[m,:] + self.alpha) / (self.nm[m] + self.alpha * self.n_topics)
         topic_assignment = [0] * self.n_topics
+        parent = self.nzw[:, w]
         try:
             edge_dict[w]
-            parent = self.nzw[:, w]
             children = []
             for i in edge_dict[w]:
                 children.append(self.nzw[:, i].tolist())
@@ -94,13 +94,14 @@ class LdaSampler(object):
                 if i>0:
                     t =  sum(children[:, idx])
                 topic_assignment[idx] = t
-#                 print("a", idx, len(children), sum(children[:, idx]), parent, topic_assignment)
             if sum(topic_assignment)>0:
                 topic_assignment = topic_assignment / sum(topic_assignment)
         except:
             pass
         topic_assignment = np.exp(np.dot(self.lambda_param, topic_assignment))
-        p_z = left * right * topic_assignment
+#         print(parent, parent.argmax())
+#         print(topic_assignment)
+        p_z = left * right * topic_assignment[parent.argmax()]
         p_z /= np.sum(p_z)
         return p_z
 
