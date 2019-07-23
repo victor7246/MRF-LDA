@@ -100,33 +100,52 @@ class LdaSampler(object):
         gammaFactor = np.zeros((self.n_topics, self.n_sentiment))
         for z in range(self.n_topics):
             gammaFactor[z,:] = (self.nmzs[m, z, :] + self.gammavec[m])/(self.nmz[m, z] + np.sum(self.gammavec[m]))
-            
-        topic_ass_sent = []
-        for z in range(self.n_topics):
-            topic_assignment = [0] * self.n_sentiment
-            parent = self.nzws[z, w , :]
-            try:
-                edge_dict[w]
-                children = []
-                for i in edge_dict[w]:
-                    children.append(self.nzws[z, i, :].tolist())
-                children = np.array(children)
-                children[children>1] = 1
-                for idx, i in enumerate(parent):
-                    t = 0
-                    if i>0:
-                        t =  sum(children[z, idx, :])
-                    topic_assignment[idx] = t
-                if sum(topic_assignment)>0:
-                    topic_assignment = topic_assignment / sum(topic_assignment)
-            except:
-                pass
-            topic_assignment = np.exp(np.dot(self.lambda_param, topic_assignment))
-            topic_ass_sent.append(topic_assignment)
-            
-        topic_ass_sent = np.array(topic_ass_sent)
         
-        p_zs = left * right[:, np.newaxis] * self.gammavec[m] * topic_ass_sent
+        topic_assignment = [0] * self.n_topics
+        parent = self.nzws[:, w, :].sum(axis=1)
+        try:
+            edge_dict[w]
+            children = []
+            for i in edge_dict[w]:
+                children.append(self.nzws[:, i, :].sum(axis=1).tolist())
+            children = np.array(children)
+            children[children>1] = 1
+            for idx, i in enumerate(parent):
+                t = 0
+                if i>0:
+                    t =  sum(children[:, idx])
+                topic_assignment[idx] = t
+            if sum(topic_assignment)>0:
+                topic_assignment = topic_assignment / sum(topic_assignment)
+        except:
+            pass
+        
+#         topic_ass_sent = []
+#         for z in range(self.n_topics):
+#             topic_assignment = [0] * self.n_sentiment
+#             parent = self.nzws[z, w , :]
+#             try:
+#                 edge_dict[w]
+#                 children = []
+#                 for i in edge_dict[w]:
+#                     children.append(self.nzws[z, i, :].tolist())
+#                 children = np.array(children)
+#                 children[children>1] = 1
+#                 for idx, i in enumerate(parent):
+#                     t = 0
+#                     if i>0:
+#                         t =  sum(children[z, idx, :])
+#                     topic_assignment[idx] = t
+#                 if sum(topic_assignment)>0:
+#                     topic_assignment = topic_assignment / sum(topic_assignment)
+#             except:
+#                 pass
+#             topic_assignment = np.exp(np.dot(self.lambda_param, topic_assignment))
+#             topic_ass_sent.append(topic_assignment)
+            
+#         topic_ass_sent = np.array(topic_ass_sent)
+        
+        p_zs = left * right[:, np.newaxis] * self.gammavec[m] * topic_assignment
         p_zs /= np.sum(p_zs)
         return p_zs
 
@@ -156,7 +175,6 @@ class LdaSampler(object):
             for s in xrange(self.n_sentiment):
                 count = 0
                 edges_count = 0
-#                 print(self.nzws.shape)
                 for a, b in (docs_edges[i]):
                     edges_count += 1
                     aa = self.nzws[:, a, s]
@@ -174,21 +192,23 @@ class LdaSampler(object):
         """
 #         V = self.nzws.shape[1]
         num = self.nzws + self.beta
-        n = np.sum(num, axis=1)
-        n = n[:, np.newaxis, :]
+        n = np.sum(num, axis=2)
+        n = np.sum(n, axis=0)
+        n = n[ np.newaxis, :, np.newaxis]
         num /= n
         return num
     
     def theta(self):
         V = self.nmz.shape[1]
         num = self.nmz + self.alpha
-        num /= np.sum(num, axis=1)[:, np.newaxis]
+        num /= np.sum(num, axis=0)[np.newaxis, :]
         return num
     
     def pi(self):
         num = self.nmzs + self.gammavec[:, np.newaxis, :]
-        n = np.sum(num, axis=2)
-        n = n[: ,:, np.newaxis]
+        n = np.sum(num, axis=1)
+        n = np.sum(n, axis=0)
+        n = n[np.newaxis, np.newaxis, :]
         num /= n
         return num
     
