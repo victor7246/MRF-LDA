@@ -52,7 +52,7 @@ class LdaSampler(object):
         self.n_sentiment = n_sentiment
         self.alpha = alpha
         self.beta = beta
-        self.gamma = gamma
+        self.gamma = 10.0/(n_topics * n_sentiment)
         self.gammavec = None
         self.lambda_param = lambda_param
         self.SentimentRange = SentimentRange
@@ -100,7 +100,7 @@ class LdaSampler(object):
         
         self.gammavec = []
         for i in train_sentiment:
-            p = [0.2] * self.n_sentiment
+            p = [self.gamma] * self.n_sentiment
             p[int(i)-1] += 1
             self.gammavec.append(p)
         
