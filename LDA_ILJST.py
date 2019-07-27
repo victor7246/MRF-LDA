@@ -10,6 +10,8 @@ import numpy as np
 import datetime
 import scipy as sp
 from scipy.special import gammaln
+from scipy import sparse
+
 
 def sample_index(p):
     """
@@ -57,12 +59,35 @@ class LdaSampler(object):
         self.probabilities_ts = {}
         self.sentimentprior = {}
         self.count_matrix = None
-
-    def _initialize(self, train_matrix, train_sentiment, unlabelled_matrix):
-        matrix = np.concatenate([train_matrix, unlabelled_matrix], axis=0)
+        self.df_matrix = None
+        self.train_sentiment = None
+        self.test_sentiment = None
+        self.words = None
+        self.edge_dict = None
+        
+    def store_data(self, train_matrix, train_sentiment, test_matrix, test_sentiment, df_matrix, words, edge_dict):
+        matrix = np.concatenate([train_matrix, test_matrix], axis=0)
         
         n_docs, vocab_size = matrix.shape
-        self.count_matrix = matrix.copy()
+        self.count_matrix = sparse.csr_matrix(matrix)
+        self.df_matrix = df_matrix.copy()
+        self.train_sentiment = train_sentiment.copy()
+        self.test_sentiment = test_sentiment.copy()
+        self.words = words
+        self.edge_dict = edge_dict
+        
+    def get_count_matrix(self):
+        return np.array(self.count_matrix.todense())
+    
+    def get_df_matrix(self):
+        return np.array(self.df_matrix.todense())
+
+    def _initialize(self, train_matrix, train_sentiment, test_matrix):
+        matrix = np.concatenate([train_matrix, test_matrix], axis=0)
+        
+        n_docs, vocab_size = matrix.shape
+        self.count_matrix = sparse.csr_matrix(matrix)
+        self.train_sentiment = train_sentiment.copy()
 
         # number of times document m and topic z co-occur
         self.nmz = np.zeros((n_docs, self.n_topics))
@@ -79,7 +104,7 @@ class LdaSampler(object):
             p[int(i)-1] += 1
             self.gammavec.append(p)
         
-        for _ in range(len(unlabelled_matrix)):
+        for _ in range(len(test_matrix)):
             self.gammavec.append(self.gamma * np.ones(self.n_sentiment))
             
         self.gammavec = np.array(self.gammavec)
@@ -218,13 +243,14 @@ class LdaSampler(object):
                 worddict[(t, s)] = [vocab[i] for i in topWordIndices]
         return worddict
 
-    def run(self, train_matrix, train_sentiment, unlabelled_matrix, edge_dict, maxiter=100):
+    def run(self, train_matrix, train_sentiment, test_matrix, edge_dict, maxiter=100):
         """
         Run the Gibbs sampler.
         """
 #         print(datetime.datetime.now().time(), "Enter Run")
         n_docs, vocab_size = train_matrix.shape
-        self._initialize(train_matrix, train_sentiment, unlabelled_matrix)
+        self._initialize(train_matrix, train_sentiment, test_matrix)
+        self.edge_dict = edge_dict
 
 #         print(datetime.datetime.now().time(), "Start Iterations")
         for it in xrange(maxiter):
