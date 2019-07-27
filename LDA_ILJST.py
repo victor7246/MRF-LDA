@@ -64,8 +64,9 @@ class LdaSampler(object):
         self.test_sentiment = None
         self.words = None
         self.edge_dict = None
+        self.vocabulary = None
         
-    def store_data(self, train_matrix, train_sentiment, test_matrix, test_sentiment, df_matrix, words, edge_dict):
+    def store_data(self, train_matrix, train_sentiment, test_matrix, test_sentiment, df_matrix, words, vocabulary, edge_dict):
         matrix = np.concatenate([train_matrix, test_matrix], axis=0)
         
         n_docs, vocab_size = matrix.shape
@@ -75,6 +76,7 @@ class LdaSampler(object):
         self.test_sentiment = test_sentiment.copy()
         self.words = words
         self.edge_dict = edge_dict
+        self.vocabulary = vocabulary
         
     def get_count_matrix(self):
         return np.array(self.count_matrix.todense())
